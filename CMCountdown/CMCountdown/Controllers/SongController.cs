@@ -17,21 +17,21 @@ using CMCountdown.Models;
 
 namespace ScrapingBeeScraper.Controllers
 {
-    public class HomeController : Controller
+    public class SongController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<SongController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        public SongController(ILogger<SongController> logger)
         {
             _logger = logger;
         }
 
         public IActionResult Index()
         {
-            string datesUrl = "https://american-country-countdown.fandom.com/wiki/Charts";
-            var response = CallUrl(datesUrl).Result;
-            var weekList = ParseHtml(response);
-            WriteToCsv(weekList);
+            string songsOfThatDateUrl = "https://american-country-countdown.fandom.com/wiki/September_12,_2020";
+            var response = CallUrl(songsOfThatDateUrl).Result;
+            var songList = ParseHtml(response);
+            WriteToCsv(songList);
 
             return View();
         }
@@ -56,33 +56,33 @@ namespace ScrapingBeeScraper.Controllers
         {
             HtmlDocument htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(html);
-            var programmerLinks = htmlDoc.DocumentNode.Descendants("li")
-                    .Where(node => !node.GetAttributeValue("class", "").Contains("tocsection")).ToList();
+            var songs = htmlDoc.DocumentNode
+                            .SelectNodes("//b/a")
+                    .Where(node => node.GetAttributeValue("title", "").Contains(":")).ToList();
+            List<string> Songs = new List<string>();
 
-            List<string> Links = new List<string>();
-
-            foreach (var link in programmerLinks)
+            foreach (var song in songs)
             {
-                if (link.FirstChild.Attributes.Count > 0)
-                    Links.Add(Regex.Replace("https://american-country-countdown.fandom.com/wiki/" + link.FirstChild.Attributes[1].Value, @" ", "_"));
-                
+                Songs.Add(song.Attributes[1].Value);
+                    
+
             }
 
 
 
-            return Links;
+            return Songs;
 
         }
 
-        private void WriteToCsv(List<string> links)
+        private void WriteToCsv(List<string> songs)
         {
             StringBuilder sb = new StringBuilder();
-            foreach (var link in links)
+            foreach (var song in songs)
             {
-                sb.AppendLine(link);
+                sb.AppendLine(song);
             }
 
-            System.IO.File.WriteAllText("links.csv", sb.ToString());
+            System.IO.File.WriteAllText("songs.csv", sb.ToString());
         }
     }
 }
